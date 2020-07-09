@@ -1,0 +1,106 @@
+
+"""
+    环境: python3
+    pip install wicc
+"""
+
+import json
+import requests
+from wicc.transactions import Transfer, TransferTransaction
+from wicc.wallet import Wallet
+
+
+main_net_baas_url = "https://baas.wiccdev.org/v2/api"
+test_net_baas_url = "https://baas-test.wiccdev.org/v2/api"
+
+
+class TransferToken:
+    def __init__(self, privkey, main_net=False):
+        self.main_net = main_net
+        self.privkey = privkey
+        self.wallet = Wallet(privkey, main_net=self.main_net)
+
+    def post_data_to_baas(self, uri, request):
+        if self.main_net:
+            url = main_net_baas_url + uri
+        else:
+            url = test_net_baas_url + uri
+        header = {
+            "Content-Type": "application/json"
+        }
+        request = json.dumps(request)
+        resp = requests.post(url=url, data=request, headers=header)
+        return resp.json()
+
+    def get_token_free_amount(self, addr, token_name="WICC"):
+        uri = "/account/getaccountinfo"
+        post_data = {"address": addr}
+        response = self.post_data_to_baas(uri, post_data)
+        print(response)
+        tokens = response["data"]["tokens"]
+        if token_name in tokens:
+            return tokens[token_name]["free_amount"]
+        else:
+            return 0
+
+    def get_current_height(self):
+        uri = "/block/getblockcount"
+        post_data = {}
+        response = self.post_data_to_baas(uri, post_data)
+        return response["data"]
+
+    def gen_serializer_data_for_transfer(self, regid, to_list):
+        tx_data = TransferTransaction()
+        # 获取当前高度
+        tx_data.valid_height = self.get_current_height()
+        # 转账方regid
+        tx_data.register_id = regid
+        # 矿工费类型
+        tx_data.fee_coin_symbol = "WICC"
+        # memo
+        tx_data.memo = "tranfer test"
+        # 收款方列表
+        tx_data.transfer_list = to_list
+        # 矿工费大小
+        tx_data.fee_amount = 1000000 * len(to_list)
+
+        return tx_data
+
+    def gen_multi_send_txraw(self, tx_data):
+        rawtx = self.wallet.transfer_tx(tx_data)
+        return rawtx
+
+    def submit_tx_raw(self, raw_tx):
+        uri = "/transaction/sendrawtx"
+        post_data = {
+            "rawtx": raw_tx
+        }
+        return self.post_data_to_baas(uri, post_data)
+
+
+if __name__ == '__main__':
+    # 实例化对象
+    privkey = "Y9UwaHP1HGajDyeut8KdrYftFyTohTeS9YNo2uVtfrudYJjbLDWM"
+    transfer_obj = TransferToken(privkey)
+
+    # 获取账户余额
+    addr = "0-1"
+    wusd_free_amount = transfer_obj.get_token_free_amount(addr, "WICC")
+    wicc_free_amount = transfer_obj.get_token_free_amount(addr, "WUSD")
+    wgrt_free_amount = transfer_obj.get_token_free_amount(addr, "WGRT")
+
+    # 准备转账列表，并生成序列化待签名数据
+    to_list = [
+        Transfer(amount=1 * 10 ** 8, symbol="WICC", desert_address="wYXV7QzHZnb8LuWw7Xa24dfUTqmH2tNZBq"),
+        Transfer(amount=1 * 10 ** 8, symbol="WUSD", desert_address="wYXV7QzHZnb8LuWw7Xa24dfUTqmH2tNZBq"),
+        Transfer(amount=1 * 10 ** 8, symbol="WGRT", desert_address="wYXV7QzHZnb8LuWw7Xa24dfUTqmH2tNZBq"),
+    ]
+    serializer_data = transfer_obj.gen_serializer_data_for_transfer(addr, to_list)
+
+    # 生成raw_tx
+    raw_tx = transfer_obj.gen_multi_send_txraw(serializer_data)
+    print(raw_tx)
+
+    # 广播签名交易
+    result = transfer_obj.submit_tx_raw(raw_tx)
+    print(result)
