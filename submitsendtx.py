@@ -1,4 +1,3 @@
-
 """
     环境: python3
     pip install wicc
@@ -8,7 +7,6 @@ import json
 import requests
 from wicc.transactions import Transfer, TransferTransaction
 from wicc.wallet import Wallet
-
 
 main_net_baas_url = "https://baas.wiccdev.org/v2/api"
 test_net_baas_url = "https://baas-test.wiccdev.org/v2/api"
@@ -20,13 +18,31 @@ class TransferToken:
         self.privkey = privkey
         self.wallet = Wallet(privkey, main_net=self.main_net)
 
+    def get_pubkey_from_privkey(self):
+        public_key = self.wallet.chain_coin.privtopub(self.privkey)
+        return public_key
+
+    def get_addr_from_privkey(self):
+        public_key = self.wallet.chain_coin.privtopub(self.privkey)
+        address = self.wallet.chain_coin.pubtoaddr(public_key)
+        return address
+
+    def get_addr_from_pubkey(self, public_key):
+        address = self.wallet.chain_coin.pubtoaddr(public_key)
+        return address
+
+    def get_regid(self, addr):
+        data = self.get_accountinfo(addr)
+        return data["regid"]
+
     def post_data_to_baas(self, uri, request):
         if self.main_net:
             url = main_net_baas_url + uri
         else:
             url = test_net_baas_url + uri
         header = {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            'Connection': 'close'
         }
         request = json.dumps(request)
         resp = requests.post(url=url, data=request, headers=header)
@@ -39,7 +55,7 @@ class TransferToken:
         print(response)
         tokens = response["data"]["tokens"]
         if token_name in tokens:
-            return tokens[token_name]["free_amount"]
+            return tokens[token_name]["freeAmount"]
         else:
             return 0
 
@@ -49,11 +65,18 @@ class TransferToken:
         response = self.post_data_to_baas(uri, post_data)
         return response["data"]
 
-    def gen_serializer_data_for_transfer(self, regid, to_list):
+    def get_accountinfo(self, addr):
+        uri = "/account/getaccountinfo"
+        post_data = {"address": addr}
+        response = self.post_data_to_baas(uri, post_data)
+        return response["data"]
+
+    def gen_serializer_data_for_transfer(self, addr, to_list):
         tx_data = TransferTransaction()
         # 获取当前高度
         tx_data.valid_height = self.get_current_height()
         # 转账方regid
+        regid = addr if "-" in addr else self.get_regid(addr)
         tx_data.register_id = regid
         # 矿工费类型
         tx_data.fee_coin_symbol = "WICC"
@@ -84,10 +107,15 @@ if __name__ == '__main__':
     transfer_obj = TransferToken(privkey)
 
     # 获取账户余额
-    addr = "0-1"
+    addr = transfer_obj.get_addr_from_privkey()
+    pubkey = transfer_obj.get_pubkey_from_privkey()
+    print(addr, pubkey)
     wusd_free_amount = transfer_obj.get_token_free_amount(addr, "WICC")
     wicc_free_amount = transfer_obj.get_token_free_amount(addr, "WUSD")
     wgrt_free_amount = transfer_obj.get_token_free_amount(addr, "WGRT")
+    print("wusd_free_amount: ", wusd_free_amount)
+    print("wicc_free_amount: ", wicc_free_amount)
+    print("wgrt_free_amount: ", wgrt_free_amount)
 
     # 准备转账列表，并生成序列化待签名数据
     to_list = [
