@@ -19,6 +19,7 @@ if __name__ == '__main__':
 
     key_file = sys.argv[1]
     to_addr = sys.argv[2]
+    fee_amount = 100000
 
     keys = KeyInfo(key_file).getPrivkeys()
     for privkey in keys:
@@ -27,14 +28,13 @@ if __name__ == '__main__':
         # 获取账户余额
         from_addr = tt.get_addr_from_privkey()
         free_amount = tt.get_token_free_amount(from_addr, "WUSD")
-
-        to_amount = free_amount - 100000
+        to_amount = free_amount - fee_amount
 
         # 准备转账列表，并生成序列化待签名数据
         to_list = [
             Transfer(amount=to_amount, symbol="WUSD", desert_address=to_addr),
         ]
-        serializer_data = tt.gen_serializer_data_for_transfer(from_addr, to_list)
+        serializer_data = tt.gen_serializer_data_for_transfer("WUSD", fee_amount, from_addr, to_list)
 
         # 生成raw_tx
         raw_tx = tt.gen_multi_send_txraw(serializer_data)

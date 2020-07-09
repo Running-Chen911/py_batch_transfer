@@ -71,7 +71,7 @@ class TransferToken:
         response = self.post_data_to_baas(uri, post_data)
         return response["data"]
 
-    def gen_serializer_data_for_transfer(self, addr, to_list):
+    def gen_serializer_data_for_transfer(self, symb, fees, addr, to_list):
         tx_data = TransferTransaction()
         # 获取当前高度
         tx_data.valid_height = self.get_current_height()
@@ -79,13 +79,13 @@ class TransferToken:
         regid = addr if "-" in addr else self.get_regid(addr)
         tx_data.register_id = regid
         # 矿工费类型
-        tx_data.fee_coin_symbol = "WICC"
+        tx_data.fee_coin_symbol = symb
         # memo
         tx_data.memo = "tranfer test"
         # 收款方列表
         tx_data.transfer_list = to_list
         # 矿工费大小
-        tx_data.fee_amount = 1000000 * len(to_list)
+        tx_data.fee_amount = fees
 
         return tx_data
 
