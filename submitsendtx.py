@@ -71,26 +71,28 @@ class TransferToken:
         response = self.post_data_to_baas(uri, post_data)
         return response["data"]
 
-    def gen_serializer_data_for_transfer(self, symb, fees, addr, to_list):
+    def get_tx_for_transfer(self, symb, total_fees, addr, to_list, memo):
         tx_data = TransferTransaction()
         # 获取当前高度
         tx_data.valid_height = self.get_current_height()
         # 转账方regid
-        regid = addr if "-" in addr else self.get_regid(addr)
-        tx_data.register_id = regid
+        if "-" in addr:
+            tx_data.regid = addr
+        else:
+            tx_data.pubkey = addr
 
         # 矿工费类型
         tx_data.fee_coin_symbol = symb
-        # memo
-        tx_data.memo = "tranfer test"
         # 收款方列表
         tx_data.transfer_list = to_list
         # 矿工费大小
-        tx_data.fee_amount = fees
+        tx_data.fee_amount = total_fees
+        # memo
+        tx_data.memo = memo
 
         return tx_data
 
-    def gen_multi_send_txraw(self, tx_data):
+    def gen_multisend_txraw(self, tx_data):
         rawtx = self.wallet.transfer_tx(tx_data)
         return rawtx
 
@@ -124,10 +126,10 @@ if __name__ == '__main__':
         Transfer(amount=1 * 10 ** 8, symbol="WUSD", desert_address="wYXV7QzHZnb8LuWw7Xa24dfUTqmH2tNZBq"),
         Transfer(amount=1 * 10 ** 8, symbol="WGRT", desert_address="wYXV7QzHZnb8LuWw7Xa24dfUTqmH2tNZBq"),
     ]
-    serializer_data = transfer_obj.gen_serializer_data_for_transfer(addr, to_list)
+    tx = transfer_obj.get_tx_for_transfer(addr, to_list)
 
     # 生成raw_tx
-    raw_tx = transfer_obj.gen_multi_send_txraw(serializer_data)
+    raw_tx = transfer_obj.gen_multisend_txraw(tx)
     print(raw_tx)
 
     # 广播签名交易
