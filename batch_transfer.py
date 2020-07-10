@@ -1,6 +1,6 @@
+from wicc-wallet-utils.transactions import Transfer, TransferTransaction
+from wicc-wallet-utils.wallet import Wallet
 from submitsendtx import TransferToken
-from wicc.transactions import Transfer, TransferTransaction
-from wicc.wallet import Wallet
 
 import sys
 
