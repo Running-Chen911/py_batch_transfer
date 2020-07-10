@@ -1,12 +1,13 @@
 """
     环境: python3
-    pip install wicc
+    pip install wicc-wallet-utils==0.0.1
 """
+
+from wicc-wallet-utils.transactions import Transfer, TransferTransaction
+from wicc-wallet-utils.wallet import Wallet
 
 import json
 import requests
-from wicc.transactions import Transfer, TransferTransaction
-from wicc.wallet import Wallet
 
 main_net_baas_url = "https://baas.wiccdev.org/v2/api"
 test_net_baas_url = "https://baas-test.wiccdev.org/v2/api"
