@@ -1,6 +1,7 @@
 from submitsendtx import TransferToken
 from wicc.transactions import Transfer, TransferTransaction
 from wicc.wallet import Wallet
+
 import sys
 
 class KeyInfo:

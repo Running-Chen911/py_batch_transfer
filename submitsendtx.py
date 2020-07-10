@@ -78,6 +78,7 @@ class TransferToken:
         # 转账方regid
         regid = addr if "-" in addr else self.get_regid(addr)
         tx_data.register_id = regid
+
         # 矿工费类型
         tx_data.fee_coin_symbol = symb
         # memo
