@@ -1,10 +1,10 @@
 """
     环境: python3
-    pip install wicc-wallet-utils==0.0.1
+    pip install wicc_wallet_utils==1.0.0
 """
 
-from wicc-wallet-utils.transactions import Transfer, TransferTransaction
-from wicc-wallet-utils.wallet import Wallet
+from wicc.transactions import Transfer, TransferTransaction
+from wicc.wallet import Wallet
 
 import json
 import requests
@@ -13,17 +13,17 @@ main_net_baas_url = "https://baas.wiccdev.org/v2/api"
 test_net_baas_url = "https://baas-test.wiccdev.org/v2/api"
 
 
-class TransferToken:
+class WalletUtils:
     def __init__(self, privkey, main_net=False):
         self.main_net = main_net
         self.privkey = privkey
         self.wallet = Wallet(privkey, main_net=self.main_net)
 
-    def get_pubkey_from_privkey(self):
+    def get_pubkey(self):
         public_key = self.wallet.chain_coin.privtopub(self.privkey)
         return public_key
 
-    def get_addr_from_privkey(self):
+    def get_addr(self):
         public_key = self.wallet.chain_coin.privtopub(self.privkey)
         address = self.wallet.chain_coin.pubtoaddr(public_key)
         return address
@@ -49,11 +49,13 @@ class TransferToken:
         resp = requests.post(url=url, data=request, headers=header)
         return resp.json()
 
-    def get_token_free_amount(self, addr, token_name="WICC"):
-        uri = "/account/getaccountinfo"
+    def get_token_free_amount(self, token_name="WICC"):
+        addr = self.get_pubkey()
         post_data = {"address": addr}
+
+        uri = "/account/getaccountinfo"
         response = self.post_data_to_baas(uri, post_data)
-        print(response)
+        # print(response)
         tokens = response["data"]["tokens"]
         if token_name in tokens:
             return tokens[token_name]["freeAmount"]
@@ -72,15 +74,14 @@ class TransferToken:
         response = self.post_data_to_baas(uri, post_data)
         return response["data"]
 
-    def get_tx_for_transfer(self, symb, total_fees, addr, to_list, memo):
+    def get_tx_for_transfer(self, symb, total_fees, regid, to_list, memo):
         tx_data = TransferTransaction()
         # 获取当前高度
         tx_data.valid_height = self.get_current_height()
         # 转账方regid
-        if "-" in addr:
-            tx_data.regid = addr
-        else:
-            tx_data.pubkey = addr
+        if "-" in regid:
+            tx_data.regid = regid
+
 
         # 矿工费类型
         tx_data.fee_coin_symbol = symb
@@ -94,6 +95,8 @@ class TransferToken:
         return tx_data
 
     def gen_multisend_txraw(self, tx_data):
+        print(self.wallet.public_key)
+
         rawtx = self.wallet.transfer_tx(tx_data)
         return rawtx
 
@@ -108,12 +111,12 @@ class TransferToken:
 if __name__ == '__main__':
     # 实例化对象
     privkey = "Y9UwaHP1HGajDyeut8KdrYftFyTohTeS9YNo2uVtfrudYJjbLDWM"
-    transfer_obj = TransferToken(privkey)
+    transfer_obj = WalletUtils(privkey)
 
     # 获取账户余额
-    addr = transfer_obj.get_addr_from_privkey()
-    pubkey = transfer_obj.get_pubkey_from_privkey()
-    print(addr, pubkey)
+    addr = transfer_obj.get_addr()
+    pubkey = transfer_obj.get_pubkey()
+    # print(addr, pubkey)
     wusd_free_amount = transfer_obj.get_token_free_amount(addr, "WICC")
     wicc_free_amount = transfer_obj.get_token_free_amount(addr, "WUSD")
     wgrt_free_amount = transfer_obj.get_token_free_amount(addr, "WGRT")
