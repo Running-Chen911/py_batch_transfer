@@ -1,6 +1,6 @@
 from wicc.transactions import Transfer, TransferTransaction
 from wicc.wallet import Wallet
-from submitsendtx import WalletUtils
+from walletutils import WalletUtils
 
 import sys
 
