@@ -1,40 +1,29 @@
 from wicc.transactions import Transfer, TransferTransaction
 from wicc.wallet import Wallet
-from walletutils import WalletUtils
+from wallet_utils import WalletUtils
+from wicc.cryptos import *
 
 import sys
 
-class KeyInfo:
-    def __init__(self, file):
-        self.file = file
-
-    def getPrivkeys(self):
-        privkeys = set()
-        f = open(self.file, "r", encoding='utf-8')
-        for line in f.readlines():
-            privkeys.add(line.strip())
-        return privkeys
-
-
 if __name__ == '__main__':
 
-    if len(sys.argv) == 1:
-        key_file = "keys.txt"
-        to_addr = "waQU7aFTVfJ5PoFuvVfWboKiWXBo45taKV"
-    else:
+    fee_amount = 100000 #sawi
+    key_file = "keys.txt"
+    to_addr = "waQU7aFTVfJ5PoFuvVfWboKiWXBo45taKV"
+    if len(sys.argv) == 3:
         key_file = sys.argv[1]
         to_addr = sys.argv[2]
 
-    fee_amount = 100000
-
     i = 0
-    for privkey in KeyInfo(key_file).getPrivkeys():
+    fo = open(key_file, "r", encoding='utf-8')
+    for priv_key in fo.readlines():
+        priv_key = priv_key.rstrip()
         i += 1
-        
         # 实例化对象
-        wu = WalletUtils(privkey)
+        wu = WalletUtils(priv_key)
         print("")
         print("#", i, ": ", wu.get_addr(), " -> ", to_addr, sep='')
+
         # 获取账户余额
         # from_addr = wu.get_pubkey()
         free_amount = wu.get_token_free_amount("WUSD")
@@ -56,5 +45,7 @@ if __name__ == '__main__':
         # print(raw_tx)
 
         # 广播签名交易
-        # result = wu.submit_tx_raw(raw_tx)
-        # print(result)
+        result = wu.submit_tx_raw(raw_tx)
+        print(result)
+
+    fo.close()
