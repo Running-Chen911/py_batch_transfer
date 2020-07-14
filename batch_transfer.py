@@ -18,6 +18,10 @@ if __name__ == '__main__':
     fo = open(key_file, "r", encoding='utf-8')
     for priv_key in fo.readlines():
         priv_key = priv_key.rstrip()
+        if len(priv_key) < 52: 
+          print("wrong priv_key:", priv_key) 
+          continue
+        
         i += 1
         # 实例化对象
         wu = WalletUtils(priv_key)
