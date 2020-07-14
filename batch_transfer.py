@@ -26,6 +26,7 @@ if __name__ == '__main__':
         # 实例化对象
         wu = WalletUtils(priv_key)
         print("")
+
         print("#", i, ": ", wu.get_addr(), " -> ", to_addr, sep='')
 
         # 获取账户余额
